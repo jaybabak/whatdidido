@@ -9,7 +9,7 @@ echo "📦 Installing $SCRIPT_NAME..."
 mkdir -p "$INSTALL_DIR"
 
 # Download script
-curl -fsSL "https://raw.githubusercontent.com/<YOUR_GITHUB_USERNAME>/whatdidido/main/whatdidido.sh" -o "$INSTALL_DIR/$SCRIPT_NAME"
+curl -fsSL "https://raw.githubusercontent.com/jaybabak/whatdidido/main/whatdidido.sh" -o "$INSTALL_DIR/$SCRIPT_NAME"
 
 chmod +x "$INSTALL_DIR/$SCRIPT_NAME"
 
