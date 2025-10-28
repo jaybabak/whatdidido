@@ -6,11 +6,26 @@ INSTALL_DIR="$HOME/.local/bin"
 SCRIPT_NAME="whatdidido"
 
 echo "📦 Installing $SCRIPT_NAME..."
-
 mkdir -p "$INSTALL_DIR"
 
-# Download latest version
-curl -fsSL "$REPO_URL/whatdidido.sh" -o "$INSTALL_DIR/$SCRIPT_NAME"
+# The actual URL we will fetch
+SCRIPT_URL="$REPO_URL/whatdidido.sh"
+
+# Log for debugging
+echo "🔍 Attempting to download script from URL:"
+echo "$SCRIPT_URL"
+
+# Test the URL first
+HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" "$SCRIPT_URL")
+echo "🌐 HTTP status code: $HTTP_STATUS"
+
+if [ "$HTTP_STATUS" -ne 200 ]; then
+  echo "❌ ERROR: Script URL returned $HTTP_STATUS. Cannot continue installation."
+  exit 1
+fi
+
+# Download the script
+curl -fsSL "$SCRIPT_URL" -o "$INSTALL_DIR/$SCRIPT_NAME"
 chmod +x "$INSTALL_DIR/$SCRIPT_NAME"
 
 # Add to PATH if missing
