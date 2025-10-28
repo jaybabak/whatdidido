@@ -28,27 +28,25 @@ fi
 curl -fsSL "$SCRIPT_URL" -o "$INSTALL_DIR/$SCRIPT_NAME"
 chmod +x "$INSTALL_DIR/$SCRIPT_NAME"
 
-# Auto-detect shell config file
-SHELL_RC=""
-
+# Auto-detect shell config file based on current shell
 if [ -n "$ZSH_VERSION" ]; then
     SHELL_RC="$HOME/.zshrc"
 elif [ -n "$BASH_VERSION" ]; then
     SHELL_RC="$HOME/.bashrc"
+else
+    # Fallback if shell not detected
+    SHELL_RC="$HOME/.profile"
 fi
 
-# Fallback: if file doesn't exist, create it
-if [ -z "$SHELL_RC" ] || [ ! -f "$SHELL_RC" ]; then
-    SHELL_RC="$HOME/.zshrc"
+# Only create the shell rc if it doesn’t exist
+if [ ! -f "$SHELL_RC" ]; then
     touch "$SHELL_RC"
 fi
 
 # Add INSTALL_DIR to PATH if missing
-if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
-    if ! grep -q "$INSTALL_DIR" "$SHELL_RC"; then
-        echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$SHELL_RC"
-        echo "✅ Added $INSTALL_DIR to PATH in $SHELL_RC"
-    fi
+if ! grep -q "$INSTALL_DIR" "$SHELL_RC"; then
+    echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$SHELL_RC"
+    echo "✅ Added $INSTALL_DIR to PATH in $SHELL_RC"
 fi
 
 # Correct log message showing the actual shell RC used
