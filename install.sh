@@ -1,54 +1,108 @@
 #!/usr/bin/env bash
+
+# Exit on error, but handle errors gracefully where needed
 set -e
 
+# Configuration
 REPO_URL="https://raw.githubusercontent.com/jaybabak/whatdidido/main"
 INSTALL_DIR="$HOME/.local/bin"
 SCRIPT_NAME="whatdidido"
-
-echo "📦 Installing $SCRIPT_NAME..."
-mkdir -p "$INSTALL_DIR"
-
-# The actual URL we will fetch
 SCRIPT_URL="$REPO_URL/whatdidido.sh"
 
-# Log for debugging
-echo "🔍 Attempting to download script from URL:"
-echo "$SCRIPT_URL"
+echo "📦 Installing $SCRIPT_NAME..."
 
-# Test the URL first
+# Create installation directory
+mkdir -p "$INSTALL_DIR"
+
+# Log the download URL
+echo "🔍 Attempting to download script from:"
+echo "   $SCRIPT_URL"
+
+# Test URL accessibility
+echo -n "🌐 Checking URL accessibility... "
 HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" "$SCRIPT_URL")
-echo "🌐 HTTP status code: $HTTP_STATUS"
+echo "HTTP $HTTP_STATUS"
 
 if [ "$HTTP_STATUS" -ne 200 ]; then
-  echo "❌ ERROR: Script URL returned $HTTP_STATUS. Cannot continue installation."
-  exit 1
+    echo "❌ ERROR: Script URL returned HTTP $HTTP_STATUS. Cannot continue installation."
+    echo "   Please verify the repository and file exist at the URL above."
+    exit 1
 fi
 
 # Download the script
-curl -fsSL "$SCRIPT_URL" -o "$INSTALL_DIR/$SCRIPT_NAME"
-chmod +x "$INSTALL_DIR/$SCRIPT_NAME"
-
-# Auto-detect shell config file based on current shell
-if [ -n "$ZSH_VERSION" ]; then
-    SHELL_RC="$HOME/.zshrc"
-elif [ -n "$BASH_VERSION" ]; then
-    SHELL_RC="$HOME/.bashrc"
-else
-    # Fallback if shell not detected
-    SHELL_RC="$HOME/.profile"
+echo "⬇️  Downloading script..."
+if ! curl -fsSL "$SCRIPT_URL" -o "$INSTALL_DIR/$SCRIPT_NAME"; then
+    echo "❌ ERROR: Failed to download script."
+    exit 1
 fi
 
-# Only create the shell rc if it doesn’t exist
+# Make executable
+chmod +x "$INSTALL_DIR/$SCRIPT_NAME"
+echo "✅ Script installed to $INSTALL_DIR/$SCRIPT_NAME"
+
+# Detect the appropriate shell configuration file
+# Check $SHELL first (more reliable than checking version variables in install script)
+SHELL_RC=""
+SHELL_NAME=""
+
+if [ -n "$SHELL" ]; then
+    case "$SHELL" in
+        */zsh)
+            SHELL_RC="$HOME/.zshrc"
+            SHELL_NAME="zsh"
+            ;;
+        */bash)
+            # Check for .bash_profile on macOS, .bashrc on Linux
+            if [[ "$OSTYPE" == "darwin"* ]] && [ -f "$HOME/.bash_profile" ]; then
+                SHELL_RC="$HOME/.bash_profile"
+            else
+                SHELL_RC="$HOME/.bashrc"
+            fi
+            SHELL_NAME="bash"
+            ;;
+        */fish)
+            SHELL_RC="$HOME/.config/fish/config.fish"
+            SHELL_NAME="fish"
+            ;;
+        *)
+            SHELL_RC="$HOME/.profile"
+            SHELL_NAME="unknown"
+            ;;
+    esac
+else
+    # Fallback if $SHELL is not set
+    SHELL_RC="$HOME/.profile"
+    SHELL_NAME="unknown"
+fi
+
+echo "🐚 Detected shell: $SHELL_NAME"
+echo "📝 Using config file: $SHELL_RC"
+
+# Create shell config file if it doesn't exist
 if [ ! -f "$SHELL_RC" ]; then
     touch "$SHELL_RC"
+    echo "   Created $SHELL_RC"
 fi
 
-# Add INSTALL_DIR to PATH if missing
-if ! grep -q "$INSTALL_DIR" "$SHELL_RC"; then
-    echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$SHELL_RC"
+# Check if PATH already contains INSTALL_DIR
+PATH_ENTRY="export PATH=\"\$HOME/.local/bin:\$PATH\""
+
+if grep -q "\.local/bin" "$SHELL_RC" 2>/dev/null; then
+    echo "ℹ️  PATH already configured in $SHELL_RC"
+else
+    # Add to PATH
+    echo "" >> "$SHELL_RC"  # Add blank line for readability
+    echo "# Added by $SCRIPT_NAME installer" >> "$SHELL_RC"
+    echo "$PATH_ENTRY" >> "$SHELL_RC"
     echo "✅ Added $INSTALL_DIR to PATH in $SHELL_RC"
 fi
 
-# Correct log message showing the actual shell RC used
-echo "👉 Run 'source $SHELL_RC' or open a new terminal to use '$SCRIPT_NAME'"
-echo "🎉 Installed! Try running: $SCRIPT_NAME"
+# Final instructions
+echo ""
+echo "🎉 Installation complete!"
+echo ""
+echo "To start using $SCRIPT_NAME, either:"
+echo "  1. Run: source $SHELL_RC"
+echo "  2. Open a new terminal window"
+echo ""
+echo "Then try: $SCRIPT_NAME"
