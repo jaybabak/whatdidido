@@ -51,5 +51,6 @@ if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
     fi
 fi
 
+# Correct log message showing the actual shell RC used
 echo "👉 Run 'source $SHELL_RC' or open a new terminal to use '$SCRIPT_NAME'"
 echo "🎉 Installed! Try running: $SCRIPT_NAME"
