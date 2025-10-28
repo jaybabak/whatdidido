@@ -28,18 +28,28 @@ fi
 curl -fsSL "$SCRIPT_URL" -o "$INSTALL_DIR/$SCRIPT_NAME"
 chmod +x "$INSTALL_DIR/$SCRIPT_NAME"
 
-# Add to PATH if missing
-if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
-  SHELL_RC="$HOME/.bashrc"
-  [ -n "$ZSH_VERSION" ] && SHELL_RC="$HOME/.zshrc"
+# Auto-detect shell config file
+SHELL_RC=""
 
-  if ! grep -q "$INSTALL_DIR" "$SHELL_RC"; then
-    echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$SHELL_RC"
-    echo "✅ Added $INSTALL_DIR to PATH in $SHELL_RC"
-  fi
-  echo "👉 Run 'source $SHELL_RC' or open a new terminal to use '$SCRIPT_NAME'"
-else
-  echo "✅ $INSTALL_DIR is already in PATH."
+if [ -n "$ZSH_VERSION" ]; then
+    SHELL_RC="$HOME/.zshrc"
+elif [ -n "$BASH_VERSION" ]; then
+    SHELL_RC="$HOME/.bashrc"
 fi
 
+# Fallback: if file doesn't exist, create it
+if [ -z "$SHELL_RC" ] || [ ! -f "$SHELL_RC" ]; then
+    SHELL_RC="$HOME/.zshrc"
+    touch "$SHELL_RC"
+fi
+
+# Add INSTALL_DIR to PATH if missing
+if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+    if ! grep -q "$INSTALL_DIR" "$SHELL_RC"; then
+        echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$SHELL_RC"
+        echo "✅ Added $INSTALL_DIR to PATH in $SHELL_RC"
+    fi
+fi
+
+echo "👉 Run 'source $SHELL_RC' or open a new terminal to use '$SCRIPT_NAME'"
 echo "🎉 Installed! Try running: $SCRIPT_NAME"
